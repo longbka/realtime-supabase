@@ -1,34 +1,32 @@
-"use client";
+"use client"
 
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/button"
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from "@/components/ui/card"
+import { Checkbox } from "@/components/ui/checkbox"
 import {
   Field,
   FieldContent,
   FieldError,
   FieldGroup,
   FieldLabel,
-} from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
-import { LoadingSwap } from "@/components/ui/loading-swap";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Checkbox } from "@radix-ui/react-checkbox";
-import { Link } from "lucide-react";
-import { Controller, useForm } from "react-hook-form";
-import z from "zod";
+} from "@/components/ui/field"
+import { Input } from "@/components/ui/input"
+import { LoadingSwap } from "@/components/ui/loading-swap"
+import { createRoom } from "@/services/supabase/actions/room" 
+import { createRoomSchema } from "@/services/supabase/schemas/room"
+import { zodResolver } from "@hookform/resolvers/zod"
+import Link from "next/link"
+import { Controller, useForm } from "react-hook-form"
+import { toast } from "sonner"
+import z from "zod"
 
-const formSchema = z.object({
-  name: z.string().min(1).trim(),
-  isPublic: z.boolean,
-});
-
-type FormData = z.infer<typeof formSchema>;
+type FormData = z.infer<typeof createRoomSchema>
 
 export default function NewRoomPage() {
   const form = useForm<FormData>({
@@ -36,11 +34,14 @@ export default function NewRoomPage() {
       name: "",
       isPublic: false,
     },
-    resolver: zodResolver(formSchema),
-  });
+    resolver: zodResolver(createRoomSchema),
+  })
 
-  function handleSubmit(data: FormData) {
-    console.log(data);
+  async function handleSubmit(data: FormData) {
+    const { error, message } = await createRoom(data)
+    if (error) {
+      toast.error(message)
+    }
   }
 
   return (
@@ -58,7 +59,7 @@ export default function NewRoomPage() {
                 control={form.control}
                 render={({ field, fieldState }) => (
                   <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor={field.name}>Room name</FieldLabel>
+                    <FieldLabel htmlFor={field.name}>Room Name</FieldLabel>
                     <Input
                       {...field}
                       id={field.name}
@@ -70,6 +71,7 @@ export default function NewRoomPage() {
                   </Field>
                 )}
               />
+
               <Controller
                 name="isPublic"
                 control={form.control}
@@ -84,12 +86,14 @@ export default function NewRoomPage() {
                     <Checkbox
                       {...field}
                       id={field.name}
-                      checked={value as any}
+                      checked={value}
                       onCheckedChange={onChange}
                       aria-invalid={fieldState.invalid}
                     />
                     <FieldContent>
-                      <FieldLabel htmlFor={field.name}>Public Room</FieldLabel>
+                      <FieldLabel className="font-normal" htmlFor={field.name}>
+                        Public Room
+                      </FieldLabel>
                       {fieldState.error && (
                         <FieldError errors={[fieldState.error]} />
                       )}
@@ -98,13 +102,17 @@ export default function NewRoomPage() {
                 )}
               />
               <Field orientation="horizontal" className="w-full">
-                <Button type="submit" className="flex-grow">
+                <Button
+                  type="submit"
+                  className="grow"
+                  disabled={form.formState.isSubmitting}
+                >
                   <LoadingSwap isLoading={form.formState.isSubmitting}>
                     Create Room
                   </LoadingSwap>
                 </Button>
                 <Button variant="outline" asChild>
-                  <Link href="/"> Cancel</Link>
+                  <Link href="/">Cancel</Link>
                 </Button>
               </Field>
             </FieldGroup>
@@ -112,5 +120,5 @@ export default function NewRoomPage() {
         </CardContent>
       </Card>
     </div>
-  );
+  )
 }
